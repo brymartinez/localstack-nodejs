@@ -1,0 +1,95 @@
+service: TestService
+
+plugins:
+  - serverless-offline
+  - serverless-localstack
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'local'}
+  region: ${opt:region, 'us-east-1'}
+  endpointType: private
+  memorySize: 512
+  deploymentBucket: local-s3-deployment-bucket
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - sns:Subscribe
+            - sns:Publish
+          Resource:
+            - 'Fn::Join':
+              - ':'
+              -
+                - 'arn'
+                - Ref: 'AWS::Partition'
+                - 'sns'
+                - Ref: 'AWS::Region'
+                - Ref: 'AWS::AccountId'
+                - 'local-notification-topic'
+        - Effect: 'Allow'
+          Action:
+            - 'kms:Decrypt'
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - kms:Decrypt
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:ListBuckets
+          Resource:
+              - 'Fn::Join':
+              - ':'
+              -
+                - 'arn'
+                - Ref: 'AWS::Partition'
+                - 's3'
+                - Ref: 'AWS::Region'
+                - Ref: 'AWS::AccountId'
+                - 'local-s3-deployment-bucket'
+        - Effect: Allow
+          Action:
+            - 'sqs:SendMessage'
+          Resource:
+            - 'Fn::Join':
+              - ':'
+              -
+                - 'arn'
+                - Ref: 'AWS::Partition'
+                - 'sqs'
+                - Ref: 'AWS::Region'
+                - Ref: 'AWS::AccountId'
+                - 'my-queue-local.fifo'
+
+functions:
+  main:
+    handler: src/index.handler
+    timeout: 300
+    events:
+      - sns:
+          arn:
+            Fn::Join:
+              - ':'
+              - - 'arn:aws:sns'
+                - Ref: 'AWS::Region'
+                - Ref: 'AWS::AccountId'
+                - 'local-notification-topic'
+          topicName: MyCustomTopic
+
+package:
+  excludeDevDependencies: true
+
+custom:
+  serverless-offline:
+    httpPort: 8089
+    noPrependStageInUrl: true
+  localstack:
+    stages:
+      - local
+    host: http://localhost
+    edgePort: 4566
+    debug: true
