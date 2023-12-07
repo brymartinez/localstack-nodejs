@@ -1,8 +1,4 @@
-const {
-  S3Client,
-  ListBucketsCommand,
-  ListObjectsCommand,
-} = require("@aws-sdk/client-s3");
+const { S3Client, ListObjectsCommand } = require("@aws-sdk/client-s3");
 
 const handler = async (event, context) => {
   console.log(event.Records[0].Sns.Message);
