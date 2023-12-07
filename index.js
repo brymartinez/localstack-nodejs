@@ -1,4 +1,8 @@
-const { S3Client, ListBucketsCommand } = require("@aws-sdk/client-s3");
+const {
+  S3Client,
+  ListBucketsCommand,
+  ListObjectsCommand,
+} = require("@aws-sdk/client-s3");
 
 const handler = async (event, context) => {
   console.log(event.Records[0].Sns.Message);
@@ -6,14 +10,15 @@ const handler = async (event, context) => {
 
   const params = {
     /** input parameters */
+    Bucket: "localstack-packages",
   };
 
-  const command = new ListBucketsCommand(params);
+  const command = new ListObjectsCommand(params);
 
   try {
     const data = await client.send(command);
     // process data.
-    console.log(data.Buckets);
+    console.log(data);
   } catch (error) {
     // error handling.
     console.error(error);

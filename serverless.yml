@@ -8,10 +8,10 @@ provider:
   name: aws
   runtime: nodejs18.x
   stage: ${opt:stage, 'local'}
-  region: ${opt:region, 'us-east-1'}
-  endpointType: private
+  region: us-east-1
+  endpointType: PRIVATE
   memorySize: 512
-  deploymentBucket: local-s3-deployment-bucket
+  deploymentBucket: localstack-packages
   iam:
     role:
       statements:
@@ -20,50 +20,40 @@ provider:
             - sns:Subscribe
             - sns:Publish
           Resource:
-            - 'Fn::Join':
-              - ':'
-              -
-                - 'arn'
-                - Ref: 'AWS::Partition'
-                - 'sns'
-                - Ref: 'AWS::Region'
-                - Ref: 'AWS::AccountId'
-                - 'local-notification-topic'
-        - Effect: 'Allow'
-          Action:
-            - 'kms:Decrypt'
-          Resource: '*'
+            - "Fn::Join":
+                - ":"
+                - - "arn"
+                  - Ref: "AWS::Partition"
+                  - "sns"
+                  - Ref: "AWS::Region"
+                  - Ref: "AWS::AccountId"
+                  - "local-notification-topic"
         - Effect: Allow
           Action:
             - kms:Decrypt
-          Resource: '*'
+          Resource:
+            - "*"
+        - Effect: Allow
+          Action:
+            - kms:Decrypt
+          Resource: "*"
         - Effect: Allow
           Action:
             - s3:GetObject
-            - s3:ListBuckets
-          Resource:
-              - 'Fn::Join':
-              - ':'
-              -
-                - 'arn'
-                - Ref: 'AWS::Partition'
-                - 's3'
-                - Ref: 'AWS::Region'
-                - Ref: 'AWS::AccountId'
-                - 'local-s3-deployment-bucket'
+            - s3:ListObjects
+          Resource: arn:aws:s3:::localstack-packages
         - Effect: Allow
           Action:
-            - 'sqs:SendMessage'
+            - sqs:SendMessage
           Resource:
-            - 'Fn::Join':
-              - ':'
-              -
-                - 'arn'
-                - Ref: 'AWS::Partition'
-                - 'sqs'
-                - Ref: 'AWS::Region'
-                - Ref: 'AWS::AccountId'
-                - 'my-queue-local.fifo'
+            - "Fn::Join":
+                - ":"
+                - - "arn"
+                  - Ref: "AWS::Partition"
+                  - "sqs"
+                  - Ref: "AWS::Region"
+                  - Ref: "AWS::AccountId"
+                  - "my-queue-local.fifo"
 
 functions:
   main:
@@ -73,12 +63,12 @@ functions:
       - sns:
           arn:
             Fn::Join:
-              - ':'
-              - - 'arn:aws:sns'
-                - Ref: 'AWS::Region'
-                - Ref: 'AWS::AccountId'
-                - 'local-notification-topic'
-          topicName: MyCustomTopic
+              - ":"
+              - - "arn:aws:sns"
+                - Ref: "AWS::Region"
+                - Ref: "AWS::AccountId"
+                - "local-notification-topic"
+          topicName: local-notification-topic
 
 package:
   excludeDevDependencies: true
